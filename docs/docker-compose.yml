@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:18.1-alpine3.23
+    container_name: postgres
+    restart: always
+    shm_size: 256mb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - revenda_veiculos_rede
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  client-service:
+    image: client-service:0.0.1-SNAPSHOT
+    container_name: client-service
+    restart: always
+    shm_size: 256mb
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "${CLIENT_PORT:-8081}:8081"
+    networks:
+      - revenda_veiculos_rede
+    depends_on:
+      db:
+        condition: service_healthy
+
+  veiculo-service:
+    image: veiculo-service:0.0.1-SNAPSHOT
+    container_name: veiculo-service
+    restart: always
+    shm_size: 256mb
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "${VEICULO_PORT:-8080}:8080"
+    networks:
+      - revenda_veiculos_rede
+    depends_on:
+      db:
+        condition: service_healthy
+
+  compra-service:
+    image: compra-service:0.0.1-SNAPSHOT
+    container_name: compra-service
+    restart: always
+    shm_size: 256mb
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "${COMPRA_PORT:-8082}:8082"
+    networks:
+      - revenda_veiculos_rede
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+
+networks:
+  revenda_veiculos_rede:
+    driver: bridge
