@@ -5,9 +5,9 @@ spring:
   application:
     name: cliente-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/revenda_veiculos_db
-    username: postgres
-    password: p0stgr3s
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
