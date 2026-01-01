@@ -1,7 +1,7 @@
 target/
 !**/src/main/**/target/
 !**/src/test/**/target/
-docs/.env
+docs/docker-compose/.env
 
 ### IntelliJ IDEA ###
 .idea
