@@ -1,0 +1,15 @@
+{
+  "realm": "revenda",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "revenda-api",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "revenda-secret",
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true
+    }
+  ]
+}
