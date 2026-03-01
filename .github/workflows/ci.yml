@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  APP_DIR: cliente
+  APP_DIR: cliente-service
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_CLIENTE }}
 
