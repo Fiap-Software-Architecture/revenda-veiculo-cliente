@@ -1,127 +1,181 @@
-# cliente-service
+# 🚗 cliente-service
 
-Serviço do ecossistema **Revenda de Veículos** responsável por **cadastro e gestão de clientes**.
+Serviço responsável pelo gerenciamento de **Clientes** no projeto
+**Revenda Veículos**.
 
-Este projeto foi desenvolvido em **Java 21 + Spring Boot** e segue o padrão de **Arquitetura Hexagonal (Ports & Adapters)**.
+Implementado em **Spring Boot** com arquitetura **Hexagonal (Ports &
+Adapters)** e deploy automatizado na **AWS ECS (Fargate)**.
 
----
+------------------------------------------------------------------------
 
-## 📦 O que é o projeto
+# 📌 Visão Geral
 
-O serviço **cliente-service** expõe uma API REST para cadastrar, consultar, atualizar e remover clientes (CRUD)..  
-Ele persiste dados em **PostgreSQL** e (opcionalmente) protege endpoints usando **Keycloak** como servidor OAuth2/OIDC.
+O `cliente-service` é um microserviço responsável por:
 
-Recursos auxiliares para executar e testar estão em **`docs/`**:
-- `docs/docker-compose/`: ambiente local (Postgres + Keycloak + serviços)
-- `docs/postgres/`: script SQL do banco
-- `docs/postman/`: collection do Postman
-- `docs/openapi/`: especificação OpenAPI (JSON)
-- `docs/keycloak/`: realm do Keycloak (`realm-revenda.json`)
+-   Criar cliente\
+-   Atualizar cliente\
+-   Buscar cliente por ID\
+-   Listar clientes\
+-   Excluir cliente
 
----
+Ele faz parte do ecossistema:
 
-## 🧱 Arquitetura (Hexagonal)
+-   cliente-service\
+-   veiculo-service\
+-   venda-service\
+-   PostgreSQL (RDS)\
+-   Keycloak\
+-   AWS ECR\
+-   AWS ECS\
+-   Terraform (Infraestrutura como código)
 
-Estrutura principal do código:
+------------------------------------------------------------------------
 
-- `domain/`  
-  Regras de negócio, entidades/VOs e exceções de domínio (não depende de frameworks).
-- `application/`  
-  Casos de uso (ports de entrada), ports de saída e orquestração do fluxo.
-- `infrastructure/`  
-  Adaptadores e detalhes técnicos (REST Controllers, JPA, integrações externas, configurações Spring).
+# 🏗 Arquitetura
 
-A ideia central é manter o **domínio isolado**, com dependências apontando **para dentro**:
-**infra → application → domain**.
+Este serviço segue **Arquitetura Hexagonal**.
 
----
+    src/main/java
+     └── br.com.revenda.cliente
+         ├── domain
+         ├── application
+         ├── adapters
+         │    ├── in
+         │    └── out
+         └── infrastructure
 
-## ▶️ Como rodar localmente
+------------------------------------------------------------------------
 
-### Opção A) Subir o ambiente completo via Docker Compose (recomendado)
+# ☁️ Infraestrutura AWS
 
-1. Acesse a pasta do compose:
-   ```bash
-   cd docs/docker-compose
-   ```
+Provisionada via Terraform:
 
-2. Suba os containers:
-   ```bash
-   docker compose --env-file .env up -d
-   ```
+-   VPC
+-   Subnets públicas e privadas
+-   Security Groups
+-   RDS PostgreSQL
+-   ECR
+-   ECS (Fargate)
+-   Load Balancer
+-   Keycloak
 
-3. A API ficará disponível em:
-   - Serviço: `http://localhost:8081`
-   - Swagger UI: `http://localhost:8081/swagger`
+------------------------------------------------------------------------
 
-> Observação: o compose assume que você já tem as imagens locais (ex.: `client-service:0.0.1-SNAPSHOT`).  
-> Para gerar a imagem via Maven (sem CI), rode:
-> ```bash
-> mvn clean install
-> docker build -t client-service:0.0.1-SNAPSHOT .
-> ```
+# 🐳 Containerização
 
-### Opção B) Rodar somente o serviço (sem Docker)
+Build local:
 
-1. Suba um PostgreSQL local (ou use o `docs/postgres/scrip-db.sql`).
-2. Exporte variáveis de ambiente (exemplos):
-   ```bash
-   export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/revenda_veiculos_db"
-   export SPRING_DATASOURCE_USERNAME="postgres"
-   export SPRING_DATASOURCE_PASSWORD="p0stgr3s"
-
-   # (opcional) Keycloak (JWK Set URI)
-   export KEYCLOAK_JWK_SET_URI="http://localhost:8089/realms/revenda/protocol/openid-connect/certs"
-   ```
-
-3. Execute:
-   ```bash
-   mvn spring-boot:run
-   ```
-
----
-
-## ✅ Como testar
-
-### Testes unitários/integrados
-```bash
-mvn test
+``` bash
+mvn clean package
+docker build -t cliente-service .
 ```
 
-### Cobertura (JaCoCo) com gate mínimo de 80%
-```bash
-mvn verify
+------------------------------------------------------------------------
+
+# 📦 ECR
+
+Padrão do repositório:
+
+    <project>-<environment>-cliente
+
+Exemplo:
+
+    revenda-veiculos-dev-cliente
+
+Tags publicadas:
+
+    revenda-veiculos-dev-cliente:latest
+    revenda-veiculos-dev-cliente:<commit-sha>
+
+------------------------------------------------------------------------
+
+# 🚀 ECS (Elastic Container Service)
+
+Deploy realizado via GitHub Actions.
+
+## Componentes
+
+-   ECS Cluster
+-   Task Definition
+-   ECS Service
+-   Load Balancer
+-   Target Group
+
+Arquivo de Task Definition:
+
+    infra/ecs/task-definition-cliente.json
+
+------------------------------------------------------------------------
+
+# 🔁 Fluxo CI/CD
+
+    Push na main
+            ↓
+    GitHub Actions
+            ↓
+    Build Maven
+            ↓
+    Testes + Cobertura
+            ↓
+    Build Docker
+            ↓
+    Push para ECR
+            ↓
+    Nova Task Definition
+            ↓
+    Deploy no ECS
+            ↓
+    Load Balancer
+            ↓
+    Produção
+
+------------------------------------------------------------------------
+
+# 🔐 Secrets necessários no GitHub
+
+## AWS
+
+-   AWS_REGION\
+-   AWS_ACCESS_KEY_ID\
+-   AWS_SECRET_ACCESS_KEY
+
+## ECR
+
+-   ECR_REPOSITORY_CLIENTE
+
+## ECS
+
+-   ECS_CLUSTER\
+-   ECS_SERVICE_CLIENTE
+
+------------------------------------------------------------------------
+
+# 🌍 Variáveis de Ambiente
+
+-   SPRING_DATASOURCE_URL\
+-   SPRING_DATASOURCE_USERNAME\
+-   SPRING_DATASOURCE_PASSWORD\
+-   KEYCLOAK_ISSUER_URI
+
+------------------------------------------------------------------------
+
+# 🖥 Execução Local
+
+``` bash
+docker-compose up -d
+mvn spring-boot:run
 ```
 
-- O relatório JaCoCo é gerado em: `target/site/jacoco/index.html`
-- O build falha se a cobertura mínima (80%) não for atendida.
+------------------------------------------------------------------------
 
----
+# 🧠 Tecnologias
 
-## 🚀 Como funciona o deploy (CI/CD)
-
-O pipeline está definido em **`.github/workflows/ci.yml`** e executa em **push** (branches `main`, `master`, `develop`) e **pull requests**.
-
-Fluxo do pipeline:
-
-1. **Build (sem testes)**  
-   Compila e empacota o JAR com Maven:
-   - `mvn -DskipTests package`
-
-2. **Testes + Cobertura (>= 80%)**  
-   Executa testes e aplica o “quality gate” de cobertura via JaCoCo:
-   - `mvn verify`  
-   Também publica o relatório como artifact (`jacoco-report`).
-
-3. **Build da imagem Docker**  
-   Gera a imagem do serviço:
-   - `docker build -t client-service:latest -t client-service:${{ github.sha }} .`
-
----
-
-## 🔎 Documentação
-
-- OpenAPI: `docs/openapi/openapi.json`
-- Postman: `docs/postman/revenda_veiculos.postman_collection.json`
-- Script do banco: `docs/postgres/scrip-db.sql`
-- Docker Compose: `docs/docker-compose/docker-compose.yml`
+-   Java 21
+-   Spring Boot
+-   Spring Security
+-   JPA / Hibernate
+-   PostgreSQL
+-   Docker
+-   GitHub Actions
+-   AWS (ECR, ECS, RDS, ALB)
+-   Terraform
