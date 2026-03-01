@@ -10,7 +10,6 @@ permissions:
   id-token: write
 
 env:
-  APP_DIR: cliente-service
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_CLIENTE }}
 
@@ -31,7 +30,6 @@ jobs:
           cache: maven
 
       - name: Build
-        working-directory: ${{ env.APP_DIR }}
         run: mvn -B -ntp -DskipTests package
 
   coverage:
@@ -51,7 +49,6 @@ jobs:
           cache: maven
 
       - name: Rodar testes e validar cobertura
-        working-directory: ${{ env.APP_DIR }}
         run: mvn -B -ntp verify
 
       - name: Upload relatório JaCoCo
@@ -59,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
-          path: ${{ env.APP_DIR }}/target/site/jacoco/
+          path: target/site/jacoco/
 
   docker:
     name: Build & Push Docker Image (ECR)
@@ -78,7 +75,6 @@ jobs:
           cache: maven
 
       - name: Build do JAR
-        working-directory: ${{ env.APP_DIR }}
         run: mvn -B -ntp -DskipTests package
 
       - name: Configure AWS credentials
@@ -100,7 +96,6 @@ jobs:
       - name: Build da imagem Docker
         run: |
           echo "Build da imagem Docker..."
-          docker build -t cliente-service ./${APP_DIR}
           echo "Build concluído com sucesso."
 
       - name: Push para ECR
